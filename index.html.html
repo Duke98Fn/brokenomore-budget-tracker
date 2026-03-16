@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BrokeNoMore – Free Budget Tracker</title>
+
+  <!-- ✅ Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- ✅ Chart.js — doughnut spending chart -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+  <!-- ✅ Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['"DM Serif Display"', 'serif'],
+            body:    ['"DM Sans"', 'sans-serif'],
+          },
+          colors: {
+            leaf: {
+              50:  '#f0fdf4', 100: '#dcfce7', 200: '#bbf7d0',
+              300: '#86efac', 400: '#4ade80', 500: '#22c55e',
+              600: '#16a34a', 700: '#15803d', 800: '#166534', 900: '#14532d'
+            },
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* ── Base ───────────────────────────────────────────── */
+    body { font-family: 'DM Sans', sans-serif; transition: background .3s, color .3s; }
+
+    /* ── Dark mode page bg ───────────────────────────────── */
+    html.dark body { background-color: #0f1a12; color: #e2e8f0; }
+
+    /* ── Animated gradient hero ──────────────────────────── */
+    .hero-bar {
+      background: linear-gradient(135deg, #14532d 0%, #166534 40%, #15803d 70%, #16a34a 100%);
+      background-size: 300% 300%;
+      animation: gradShift 8s ease infinite;
+    }
+    @keyframes gradShift {
+      0%,100% { background-position: 0% 50%; }
+      50%      { background-position: 100% 50%; }
+    }
+
+    /* ── Dark mode toggle button ─────────────────────────── */
+    #dark-toggle {
+      position: absolute; top: 16px; right: 16px;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 12px;
+      color: #fff;
+      cursor: pointer;
+      transition: background .2s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    #dark-toggle:hover { background: rgba(255,255,255,0.25); }
+
+    /* ── Lift on cards ───────────────────────────────────── */
+    .lift { transition: transform .2s, box-shadow .2s; }
+    .lift:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(22,101,52,.18); }
+
+    /* ── Income/Expense toggle ───────────────────────────── */
+    .toggle-pill { transition: background .2s, color .2s; }
+
+    /* ── Row fade-in ─────────────────────────────────────── */
+    @keyframes rowIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+    .row-in { animation: rowIn .25s ease both; }
+
+    /* ── Light mode dot-pattern bg ───────────────────────── */
+    .dot-bg {
+      background-color: #f0fdf4;
+      background-image: radial-gradient(#86efac 1px, transparent 1px);
+      background-size: 22px 22px;
+    }
+    /* Dark mode overrides dot-bg */
+    html.dark .dot-bg {
+      background-color: #0f1a12;
+      background-image: radial-gradient(#1a3d20 1px, transparent 1px);
+    }
+
+    /* ── Card theming ────────────────────────────────────── */
+    .card {
+      background: #fff;
+      border: 1px solid #dcfce7;
+      transition: background .3s, border-color .3s;
+    }
+    html.dark .card {
+      background: #1a2e1e;
+      border-color: #2d4a32;
+    }
+
+    /* ── Inputs in dark mode ─────────────────────────────── */
+    html.dark input, html.dark select, html.dark textarea {
+      background: #0f1a12 !important;
+      border-color: #2d4a32 !important;
+      color: #e2e8f0 !important;
+    }
+    html.dark input::placeholder { color: #4b6b52; }
+
+    /* ── Text colours in dark mode ───────────────────────── */
+    html.dark .text-gray-400  { color: #6b8f72 !important; }
+    html.dark .text-gray-500  { color: #7aaa82 !important; }
+    html.dark .text-gray-600  { color: #9dc4a3 !important; }
+    html.dark .text-gray-800  { color: #e2e8f0 !important; }
+    html.dark .text-leaf-800  { color: #86efac !important; }
+    html.dark .text-leaf-700  { color: #4ade80 !important; }
+    html.dark .text-leaf-600  { color: #22c55e !important; }
+    html.dark .bg-leaf-50     { background: #162318 !important; }
+    html.dark .bg-leaf-100    { background: #1e3322 !important; }
+    html.dark .text-leaf-700.bg-leaf-100 { color: #4ade80 !important; }
+
+    /* ── Transaction row dark ────────────────────────────── */
+    html.dark .tx-income { background: #162318 !important; border-color: #2d4a32 !important; }
+    html.dark .tx-expense { background: #2a1515 !important; border-color: #3d1f1f !important; }
+
+    /* ── Tip & tool cards dark ───────────────────────────── */
+    html.dark .tip-card  { background: #162318 !important; border-left-color: #22c55e; }
+    html.dark .tool-card { background: #162318 !important; border-left-color: #16a34a; }
+
+    /* ── Accent borders ──────────────────────────────────── */
+    .tip-card  { border-left: 4px solid #4ade80; }
+    .tool-card { border-left: 4px solid #22c55e; }
+
+    /* ── Delete button ───────────────────────────────────── */
+    .del-btn { transition: color .15s, background .15s; }
+    .del-btn:hover { color: #dc2626; background: #fef2f2; }
+    html.dark .del-btn:hover { background: #2a1515; }
+
+    /* ── Sort button active state ────────────────────────── */
+    .sort-btn { transition: background .15s, color .15s; border-radius: 6px; padding: 3px 8px; font-size: 11px; }
+    .sort-btn.active { background: #16a34a; color: #fff; }
+    html.dark .sort-btn { color: #6b8f72; }
+    html.dark .sort-btn.active { background: #15803d; color: #fff; }
+
+    /* ── Confirmation modal overlay ──────────────────────── */
+    #confirm-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 50;
+      align-items: center; justify-content: center;
+    }
+    #confirm-overlay.show { display: flex; }
+    #confirm-box {
+      background: #fff;
+      border-radius: 20px;
+      padding: 28px 24px;
+      max-width: 340px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+    }
+    html.dark #confirm-box { background: #1a2e1e; }
+
+    /* ── Number spinner hide ─────────────────────────────── */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+
+    /* ── Scrollbar ───────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f0fdf4; }
+    ::-webkit-scrollbar-thumb { background: #86efac; border-radius: 99px; }
+    html.dark ::-webkit-scrollbar-track { background: #0f1a12; }
+    html.dark ::-webkit-scrollbar-thumb { background: #2d4a32; }
+
+    /* ── AdSense placeholder ─────────────────────────────── */
+    .ad-slot {
+      border: 2px dashed #bbf7d0;
+      background: rgba(255,255,255,0.5);
+      border-radius: 12px; padding: 16px;
+      text-align: center; color: #9ca3af;
+      font-size: 12px; font-style: italic;
+    }
+    html.dark .ad-slot { background: rgba(22,35,24,0.6); border-color: #2d4a32; }
+
+    /* ── Toast ───────────────────────────────────────────── */
+    @keyframes toastIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+    .toast-in { animation: toastIn .2s ease both; }
+
+    /* ── Footer trust badges ─────────────────────────────── */
+    .trust-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.75);
+    }
+  </style>
+</head>
+
+<!-- ═══ The html element gets class="dark" toggled by JS ═══ -->
+<body class="dot-bg min-h-screen text-gray-800">
+
+  <!-- ════════════════════════════════════════════════════
+       🌿  HEADER / HERO
+  ════════════════════════════════════════════════════ -->
+  <header class="hero-bar text-white px-5 py-10 text-center shadow-lg relative">
+
+    <!--
+      ✅ DARK / LIGHT MODE TOGGLE
+      Clicking toggles 'dark' class on <html>.
+      The icon and label swap automatically via JS.
+      Preference is saved in localStorage.
+    -->
+    <button id="dark-toggle" onclick="toggleDark()" aria-label="Toggle dark mode">
+      <span id="dark-icon">🌙</span>
+      <span id="dark-label">Dark</span>
+    </button>
+
+    <p class="text-leaf-200 text-xs tracking-widest uppercase font-medium mb-1">Your personal</p>
+    <h1 class="font-display text-4xl md:text-5xl">BrokeNoMore 💸</h1>
+    <p class="mt-2 text-leaf-200 text-sm">Track every penny. Keep every pound.</p>
+    <p class="mt-3 text-leaf-300 text-xs italic opacity-80">Made with ❤️ by a guy who was broke too.</p>
+  </header>
+
+
+  <!-- ════════════════════════════════════════════════════
+       📊  DASHBOARD
+  ════════════════════════════════════════════════════ -->
+  <section class="max-w-3xl mx-auto px-4 -mt-4">
+
+    <div class="lift card rounded-2xl shadow-xl p-6 text-center mb-4">
+      <p class="text-xs text-gray-400 tracking-widest uppercase mb-1">Current Balance</p>
+      <p id="balance" class="font-display text-5xl font-bold text-leaf-700">£0.00</p>
+      <p id="balance-note" class="text-xs text-gray-400 mt-2">Add your first transaction below 👇</p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3 mb-6">
+      <div class="lift card rounded-xl shadow-md p-4">
+        <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Income this month</p>
+        <p id="total-income" class="font-display text-2xl text-leaf-600">£0.00</p>
+        <p class="text-xs text-gray-400 mt-1">💚 Money in</p>
+      </div>
+      <div class="lift card rounded-xl shadow-md p-4">
+        <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Expenses this month</p>
+        <p id="total-expenses" class="font-display text-2xl text-red-500">£0.00</p>
+        <p class="text-xs text-gray-400 mt-1">🔴 Money out</p>
+      </div>
+    </div>
+
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════
+       💰  ADSENSE SLOT 1 — above the form
+       HOW TO ACTIVATE: delete the ad-slot div, paste your
+       AdSense <script> snippet inside this wrapper div.
+  ════════════════════════════════════════════════════ -->
+  <div class="max-w-3xl mx-auto px-4 mb-5">
+    <div class="ad-slot">
+      <!-- PASTE ADSENSE CODE HERE -->
+      Advertisement
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════════════════
+       ➕  ADD TRANSACTION FORM
+  ════════════════════════════════════════════════════ -->
+  <section class="max-w-3xl mx-auto px-4 mb-6">
+    <div class="card rounded-2xl shadow-md p-5">
+
+      <h2 class="font-display text-xl text-leaf-800 mb-4">Add Transaction</h2>
+
+      <!-- Income / Expense toggle -->
+      <div class="flex bg-leaf-50 rounded-full p-1 mb-4 w-fit mx-auto border border-leaf-200" style="border-color:rgba(134,239,172,.4)">
+        <button id="btn-income" onclick="setType('income')"
+          class="toggle-pill px-6 py-2 rounded-full text-sm font-medium bg-leaf-600 text-white shadow">
+          💚 Income
+        </button>
+        <button id="btn-expense" onclick="setType('expense')"
+          class="toggle-pill px-6 py-2 rounded-full text-sm font-medium text-gray-500">
+          🔴 Expense
+        </button>
+      </div>
+
+      <input type="hidden" id="tx-type" value="income" />
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-gray-500 mb-1 block">Amount (£)</label>
+          <input id="tx-amount" type="number" min="0.01" step="0.01" placeholder="0.00"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-leaf-400 transition" />
+        </div>
+        <div>
+          <label class="text-xs text-gray-500 mb-1 block">Date</label>
+          <input id="tx-date" type="date"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-leaf-400 transition" />
+        </div>
+        <div>
+          <label class="text-xs text-gray-500 mb-1 block">Category</label>
+          <select id="tx-category"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-leaf-400 transition bg-white">
+            <option value="Salary">💼 Salary</option>
+            <option value="Food">🍔 Food</option>
+            <option value="Groceries">🛒 Groceries</option>
+            <option value="Rent">🏠 Rent</option>
+            <option value="Transport">🚌 Transport</option>
+            <option value="Entertainment">🎬 Entertainment</option>
+            <option value="Bills">💡 Bills</option>
+            <option value="Other">📦 Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-gray-500 mb-1 block">Short description</label>
+          <input id="tx-desc" type="text" placeholder="e.g. Tesco run, Netflix…"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-leaf-400 transition" />
+        </div>
+      </div>
+
+      <button onclick="addTransaction()"
+        class="mt-4 w-full bg-leaf-600 hover:bg-leaf-700 active:scale-95 text-white font-medium py-3 rounded-xl transition text-sm shadow-md">
+        + Add Transaction
+      </button>
+
+      <p id="form-error" class="text-red-500 text-xs text-center mt-2 hidden">
+        Please enter a valid amount and date.
+      </p>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════
+       📋  TRANSACTION LIST
+       ↳ Header row has sort buttons (Newest / Oldest)
+         and a "Clear all" button with confirmation modal.
+  ════════════════════════════════════════════════════ -->
+  <section class="max-w-3xl mx-auto px-4 mb-6">
+    <div class="card rounded-2xl shadow-md p-5">
+
+      <!-- Header: title + count + sort controls + clear -->
+      <div class="flex flex-wrap items-center gap-2 mb-4">
+        <h2 class="font-display text-xl text-leaf-800 mr-auto">Transactions</h2>
+
+        <!-- Sort buttons -->
+        <div class="flex items-center gap-1 text-gray-400">
+          <span class="text-xs mr-1 hidden sm:inline">Sort:</span>
+          <button id="sort-newest" class="sort-btn active" onclick="setSort('newest')">Newest ↓</button>
+          <button id="sort-oldest" class="sort-btn"        onclick="setSort('oldest')">Oldest ↑</button>
+        </div>
+
+        <!-- Entry count badge -->
+        <span id="tx-count"
+          class="text-xs bg-leaf-100 text-leaf-700 px-2.5 py-1 rounded-full font-medium">
+          0 entries
+        </span>
+
+        <!--
+          ✅ CLEAR ALL BUTTON
+          Opens a confirmation modal — never deletes without asking.
+        -->
+        <button onclick="showConfirm()"
+          class="text-xs text-red-400 hover:text-red-600 hover:bg-red-50 px-2.5 py-1 rounded-full transition border border-red-100 hover:border-red-200"
+          title="Delete all transactions">
+          🗑 Clear all
+        </button>
+      </div>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="text-center py-10 text-gray-400">
+        <p class="text-4xl mb-2">🌱</p>
+        <p class="text-sm">No transactions yet. Plant your first one above!</p>
+      </div>
+
+      <!-- JS-rendered list -->
+      <ul id="tx-list" class="space-y-2"></ul>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════
+       🥧  PIE CHART + SUMMARY TABLE
+  ════════════════════════════════════════════════════ -->
+  <section class="max-w-3xl mx-auto px-4 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+
+    <div class="card rounded-2xl shadow-md p-5">
+      <h2 class="font-display text-xl text-leaf-800 mb-3">Spending by Category</h2>
+      <div id="chart-empty" class="text-center py-8 text-gray-400 text-sm">
+        <p class="text-3xl mb-2">📊</p>No expense data yet.
+      </div>
+      <div id="chart-wrap" class="hidden" style="position:relative; max-height:260px;">
+        <canvas id="pieChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card rounded-2xl shadow-md p-5">
+      <h2 class="font-display text-xl text-leaf-800 mb-3">Monthly Summary</h2>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100">
+            <th class="text-left pb-2">Category</th>
+            <th class="text-right pb-2">Income</th>
+            <th class="text-right pb-2">Expense</th>
+          </tr>
+        </thead>
+        <tbody id="summary-table" class="divide-y divide-gray-50"></tbody>
+      </table>
+      <div id="summary-empty" class="text-center py-6 text-gray-400 text-sm">
+        Nothing to summarise yet.
+      </div>
+    </div>
+
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════
+       💰  ADSENSE SLOT 2 — after chart section
+  ════════════════════════════════════════════════════ -->
+  <div class="max-w-3xl mx-auto px-4 mb-6">
+    <div class="ad-slot">
+      <!-- PASTE ADSENSE CODE HERE -->
+      Advertisement
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════════════════
+       🔗  RECOMMENDED FREE TOOLS
+       Replace href="#" with your real affiliate URLs.
+       Keep rel="noopener sponsored" + the disclosure note.
+  ════════════════════════════════════════════════════ -->
+  <section class="max-w-3xl mx-auto px-4 mb-6">
+    <div class="card rounded-2xl shadow-md p-5">
+
+      <h2 class="font-display text-xl text-leaf-800 mb-1">🔗 Recommended Free Tools</h2>
+      <p class="text-xs text-gray-400 mb-5">Stuff I actually use or wish I'd found sooner. All free to start.</p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+        <a href="#" target="_blank" rel="noopener sponsored"
+          class="tool-card lift flex items-start gap-3 p-4 rounded-xl bg-leaf-50 border border-leaf-100 hover:border-leaf-400 transition group">
+          <span class="text-2xl mt-0.5 flex-shrink-0">🏦</span>
+          <div>
+            <p class="text-sm font-medium text-leaf-800 group-hover:text-leaf-600 leading-snug">Free Checking — Chase</p>
+            <p class="text-xs text-gray-500 mt-1 leading-relaxed">No monthly fees, no minimum balance. Open in minutes online.</p>
+            <p class="text-xs text-leaf-600 font-medium mt-2">Open free account →</p>
+          </div>
+        </a>
+
+        <a href="#" target="_blank" rel="noopener sponsored"
+          class="tool-card lift flex items-start gap-3 p-4 rounded-xl bg-leaf-50 border border-leaf-100 hover:border-leaf-400 transition group">
+          <span class="text-2xl mt-0.5 flex-shrink-0">📊</span>
+          <div>
+            <p class="text-sm font-medium text-leaf-800 group-hover:text-leaf-600 leading-snug">Budget App — YNAB Free Trial</p>
+            <p class="text-xs text-gray-500 mt-1 leading-relaxed">34-day free trial. The budgeting method that actually changed things for me.</p>
+            <p class="text-xs text-leaf-600 font-medium mt-2">Try free for 34 days →</p>
+          </div>
+        </a>
+
+        <a href="#" target="_blank" rel="noopener sponsored"
+          class="tool-card lift flex items-start gap-3 p-4 rounded-xl bg-leaf-50 border border-leaf-100 hover:border-leaf-400 transition group">
+          <span class="text-2xl mt-0.5 flex-shrink-0">💳</span>
+          <div>
+            <p class="text-sm font-medium text-leaf-800 group-hover:text-leaf-600 leading-snug">Free Credit Score — Credit Karma</p>
+            <p class="text-xs text-gray-500 mt-1 leading-relaxed">See your score for free, forever. No card needed. Borrow smarter.</p>
+            <p class="text-xs text-leaf-600 font-medium mt-2">Check score free →</p>
+          </div>
+        </a>
+
+        <a href="#" target="_blank" rel="noopener sponsored"
+          class="tool-card lift flex items-start gap-3 p-4 rounded-xl bg-leaf-50 border border-leaf-100 hover:border-leaf-400 transition group">
+          <span class="text-2xl mt-0.5 flex-shrink-0">🌱</span>
+          <div>
+            <p class="text-sm font-medium text-leaf-800 group-hover:text-leaf-600 leading-snug">Micro-Investing — Acorns</p>
+            <p class="text-xs text-gray-500 mt-1 leading-relaxed">Rounds up your spare change and invests it automatically. Start with $5.</p>
+            <p class="text-xs text-leaf-600 font-medium mt-2">Start investing today →</p>
+          </div>
+        </a>
+
+      </div>
+
+      <p class="text-xs text-gray-300 mt-5 text-center italic">
+        Some links may be affiliate links. I may earn a small commission at no cost to you. I only recommend things I'd use myself.
+      </p>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════
+       📤  SHARE BUTTON
+  ════════════════════════════════════════════════════ -->
+  <section class="max-w-3xl mx-auto px-4 mb-6">
+    <div class="bg-leaf-700 rounded-2xl shadow-md p-6 text-center text-white">
+      <p class="font-display text-xl mb-1">Know someone struggling with money? 👋</p>
+      <p class="text-leaf-200 text-sm mb-5">Share this tool — it's free, no sign-up, and it actually helps.</p>
+      <button onclick="shareApp()"
+        class="bg-white text-leaf-800 font-medium px-6 py-2.5 rounded-xl text-sm hover:bg-leaf-100 active:scale-95 transition shadow-md">
+        📋 Copy share message
+      </button>
+      <p id="share-toast" class="text-leaf-200 text-xs mt-4 hidden toast-in">
+        ✅ Copied! Paste it into WhatsApp, Twitter, anywhere you like.
+      </p>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════
+       💡  MONEY TIPS
+       ✅ IMPROVEMENT: Longer, warmer, more encouraging tips
+          written like a friend who genuinely cares.
+  ════════════════════════════════════════════════════ -->
+  <section class="max-w-3xl mx-auto px-4 mb-6">
+    <div class="card rounded-2xl shadow-md p-5">
+      <h2 class="font-display text-xl text-leaf-800 mb-1">💡 Real Talk: Money Tips from a Friend</h2>
+      <p class="text-xs text-gray-400 mb-4">No judgment. No finance-bro jargon. Just honest stuff that helped me.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="tips-container"></div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════
+       🦶  FOOTER
+       ✅ IMPROVEMENT: Trust-building footer with
+          "Completely free • No signup • Your data stays on your device"
+  ════════════════════════════════════════════════════ -->
+  <footer class="hero-bar text-white py-8 px-4 text-center mt-2">
+
+    <p class="font-display text-lg mb-4">BrokeNoMore 💸</p>
+
+    <!-- Trust badges row -->
+    <div class="flex flex-wrap justify-center gap-2 mb-5">
+      <span class="trust-badge">✅ Completely free</span>
+      <span class="trust-badge">🚫 No sign-up required</span>
+      <span class="trust-badge">🔒 Your data stays on your device</span>
+      <span class="trust-badge">📡 Works 100% offline</span>
+    </div>
+
+    <p class="text-leaf-300 text-xs leading-relaxed max-w-md mx-auto">
+      Everything you enter is stored only in your browser's localStorage.
+      Nothing is ever sent to any server. No accounts, no tracking, no nonsense.
+    </p>
+
+    <p class="text-leaf-400 text-xs mt-4 italic opacity-60">
+      Made with ❤️ by a guy who was broke too. Built to help, not to profit from you.
+    </p>
+
+  </footer>
+
+
+  <!-- ════════════════════════════════════════════════════
+       🗑️  CLEAR ALL CONFIRMATION MODAL
+       ✅ Two-step confirmation before wiping all data.
+          Clicking the red button opens this overlay.
+          User must explicitly confirm before anything is deleted.
+  ════════════════════════════════════════════════════ -->
+  <div id="confirm-overlay" onclick="hideConfirm(event)">
+    <div id="confirm-box">
+      <p class="text-4xl mb-3">⚠️</p>
+      <p class="font-display text-xl text-gray-800 mb-2">Delete everything?</p>
+      <p class="text-sm text-gray-500 mb-6 leading-relaxed">
+        This will permanently delete all your transactions. There's no undo.
+        Are you absolutely sure?
+      </p>
+      <div class="flex gap-3">
+        <button onclick="hideConfirm()"
+          class="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition">
+          Cancel
+        </button>
+        <button onclick="clearAll()"
+          class="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition">
+          Yes, delete all
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════════════════
+       🧠  JAVASCRIPT
+  ════════════════════════════════════════════════════ -->
+  <script>
+
+    /* ──────────────────────────────────────────────────
+       🌙 DARK MODE
+       Saves preference to localStorage so it persists
+       between visits. Toggles 'dark' class on <html>.
+    ────────────────────────────────────────────────── */
+    function applyDark(isDark) {
+      document.documentElement.classList.toggle('dark', isDark);
+      document.getElementById('dark-icon').textContent  = isDark ? '☀️' : '🌙';
+      document.getElementById('dark-label').textContent = isDark ? 'Light' : 'Dark';
+    }
+
+    function toggleDark() {
+      const isDark = !document.documentElement.classList.contains('dark');
+      localStorage.setItem('brokeno_dark', isDark ? '1' : '0');
+      applyDark(isDark);
+    }
+
+    // On load, restore saved preference (default: light)
+    applyDark(localStorage.getItem('brokeno_dark') === '1');
+
+
+    /* ──────────────────────────────────────────────────
+       📦 DATA + STATE
+    ────────────────────────────────────────────────── */
+    let transactions = JSON.parse(localStorage.getItem('brokeno_txs') || '[]');
+
+    // Sort direction: 'newest' (default) or 'oldest'
+    let sortOrder = localStorage.getItem('brokeno_sort') || 'newest';
+
+    function save() {
+      localStorage.setItem('brokeno_txs', JSON.stringify(transactions));
+    }
+
+
+    /* ──────────────────────────────────────────────────
+       🔀 SORT TOGGLE
+       ✅ Sort by date: newest first or oldest first.
+          State persists in localStorage.
+    ────────────────────────────────────────────────── */
+    function setSort(order) {
+      sortOrder = order;
+      localStorage.setItem('brokeno_sort', order);
+
+      // Update button active styles
+      document.getElementById('sort-newest').classList.toggle('active', order === 'newest');
+      document.getElementById('sort-oldest').classList.toggle('active', order === 'oldest');
+
+      render();
+    }
+
+    // Apply sort on init (restore saved preference)
+    setSort(sortOrder);
+
+
+    /* ──────────────────────────────────────────────────
+       🗑️  CLEAR ALL — with confirmation modal
+    ────────────────────────────────────────────────── */
+    function showConfirm() {
+      // Only show if there's actually data to delete
+      if (transactions.length === 0) return;
+      document.getElementById('confirm-overlay').classList.add('show');
+    }
+
+    function hideConfirm(e) {
+      // Clicking the dark overlay itself (not the box) also closes it
+      if (e && e.target !== document.getElementById('confirm-overlay')) return;
+      document.getElementById('confirm-overlay').classList.remove('show');
+    }
+
+    function clearAll() {
+      transactions = [];
+      save();
+      document.getElementById('confirm-overlay').classList.remove('show');
+      render();
+    }
+
+
+    /* ──────────────────────────────────────────────────
+       🔀 INCOME / EXPENSE TOGGLE
+    ────────────────────────────────────────────────── */
+    function setType(type) {
+      document.getElementById('tx-type').value = type;
+      const btnI = document.getElementById('btn-income');
+      const btnE = document.getElementById('btn-expense');
+      if (type === 'income') {
+        btnI.className = 'toggle-pill px-6 py-2 rounded-full text-sm font-medium bg-leaf-600 text-white shadow';
+        btnE.className = 'toggle-pill px-6 py-2 rounded-full text-sm font-medium text-gray-500';
+        document.getElementById('tx-category').value = 'Salary';
+      } else {
+        btnE.className = 'toggle-pill px-6 py-2 rounded-full text-sm font-medium bg-red-500 text-white shadow';
+        btnI.className = 'toggle-pill px-6 py-2 rounded-full text-sm font-medium text-gray-500';
+        document.getElementById('tx-category').value = 'Food';
+      }
+    }
+
+
+    /* ──────────────────────────────────────────────────
+       ➕ ADD TRANSACTION
+    ────────────────────────────────────────────────── */
+    function addTransaction() {
+      const amount   = parseFloat(document.getElementById('tx-amount').value);
+      const type     = document.getElementById('tx-type').value;
+      const category = document.getElementById('tx-category').value;
+      const date     = document.getElementById('tx-date').value;
+      const desc     = document.getElementById('tx-desc').value.trim();
+      const errEl    = document.getElementById('form-error');
+
+      if (!amount || amount <= 0 || !date) {
+        errEl.classList.remove('hidden');
+        setTimeout(() => errEl.classList.add('hidden'), 3000);
+        return;
+      }
+
+      const tx = {
+        id: Date.now(), type, amount, category, date,
+        desc: desc || category
+      };
+
+      transactions.unshift(tx);
+      save();
+      document.getElementById('tx-amount').value = '';
+      document.getElementById('tx-desc').value   = '';
+      render();
+    }
+
+
+    /* ──────────────────────────────────────────────────
+       🗑️  DELETE SINGLE TRANSACTION
+    ────────────────────────────────────────────────── */
+    function deleteTransaction(id) {
+      transactions = transactions.filter(tx => tx.id !== id);
+      save();
+      render();
+    }
+
+
+    /* ──────────────────────────────────────────────────
+       🔢 HELPERS
+    ────────────────────────────────────────────────── */
+    function fmt(n) {
+      return '£' + Math.abs(n).toLocaleString('en-GB', {
+        minimumFractionDigits: 2, maximumFractionDigits: 2
+      });
+    }
+
+    function thisMonth() {
+      const now = new Date();
+      const ym  = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      return transactions.filter(tx => tx.date && tx.date.startsWith(ym));
+    }
+
+    function fmtDate(d) {
+      if (!d) return '';
+      const [y, m, day] = d.split('-');
+      return `${day}/${m}/${y}`;
+    }
+
+    const catEmoji = {
+      Salary:'💼', Food:'🍔', Groceries:'🛒', Rent:'🏠',
+      Transport:'🚌', Entertainment:'🎬', Bills:'💡', Other:'📦'
+    };
+
+    const catColors = {
+      Food:'#4ade80', Groceries:'#22c55e', Rent:'#16a34a',
+      Transport:'#86efac', Entertainment:'#f97316',
+      Bills:'#facc15', Salary:'#60a5fa', Other:'#c084fc'
+    };
+
+
+    /* ──────────────────────────────────────────────────
+       🖥️  RENDER
+       Rebuilds the entire UI from the transactions array.
+       Called after every data change.
+    ────────────────────────────────────────────────── */
+    let pieChart = null;
+
+    function render() {
+      const monthly = thisMonth();
+
+      /* — Dashboard totals — */
+      const totalIn  = transactions.filter(t => t.type==='income') .reduce((s,t)=>s+t.amount,0);
+      const totalOut = transactions.filter(t => t.type==='expense').reduce((s,t)=>s+t.amount,0);
+      const monthIn  = monthly.filter(t => t.type==='income') .reduce((s,t)=>s+t.amount,0);
+      const monthOut = monthly.filter(t => t.type==='expense').reduce((s,t)=>s+t.amount,0);
+      const balance  = totalIn - totalOut;
+
+      const balEl = document.getElementById('balance');
+      balEl.textContent = (balance < 0 ? '-' : '') + fmt(balance);
+      balEl.className   = 'font-display text-5xl font-bold ' + (balance < 0 ? 'text-red-500' : 'text-leaf-700');
+
+      document.getElementById('balance-note').textContent =
+        balance < 0 ? '⚠️ You\'re in the red — time to cut back!' :
+        balance === 0 ? 'All even! Add your first transaction.' :
+        '✨ Looking good! Keep it up.';
+
+      document.getElementById('total-income').textContent   = fmt(monthIn);
+      document.getElementById('total-expenses').textContent = fmt(monthOut);
+
+      /* — Transaction list with sort — */
+      const listEl  = document.getElementById('tx-list');
+      const emptyEl = document.getElementById('empty-state');
+      const countEl = document.getElementById('tx-count');
+
+      listEl.innerHTML = '';
+      countEl.textContent = `${transactions.length} entr${transactions.length===1?'y':'ies'}`;
+
+      if (transactions.length === 0) {
+        emptyEl.classList.remove('hidden');
+      } else {
+        emptyEl.classList.add('hidden');
+
+        // ✅ SORT: make a sorted copy (don't mutate the original array)
+        const sorted = [...transactions].sort((a, b) => {
+          const da = new Date(a.date), db = new Date(b.date);
+          return sortOrder === 'newest' ? db - da : da - db;
+        });
+
+        sorted.forEach(tx => {
+          const isIncome = tx.type === 'income';
+          const li = document.createElement('li');
+          // Dark-mode-aware classes applied via JS
+          li.className = `row-in flex items-center justify-between gap-2 rounded-xl px-4 py-3 border ${
+            isIncome ? 'tx-income border-leaf-100 bg-leaf-50' : 'tx-expense border-red-50 bg-red-50'
+          }`;
+
+          li.innerHTML = `
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="text-xl">${catEmoji[tx.category]||'📦'}</span>
+              <div class="min-w-0">
+                <p class="text-sm font-medium truncate text-gray-800">${tx.desc}</p>
+                <p class="text-xs text-gray-400">${tx.category} · ${fmtDate(tx.date)}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span class="font-display text-base font-semibold ${isIncome?'text-leaf-700':'text-red-500'}">
+                ${isIncome?'+':'-'}${fmt(tx.amount)}
+              </span>
+              <button onclick="deleteTransaction(${tx.id})"
+                class="del-btn rounded-lg p-1.5 text-gray-300 transition" title="Delete">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7
+                       m5 4v6m4-6v6M9 7V4h6v3M3 7h18"/>
+                </svg>
+              </button>
+            </div>
+          `;
+          listEl.appendChild(li);
+        });
+      }
+
+      /* — Doughnut chart — */
+      const expenses  = monthly.filter(t => t.type==='expense');
+      const catTotals = {};
+      expenses.forEach(t => { catTotals[t.category] = (catTotals[t.category]||0) + t.amount; });
+
+      const chartWrap  = document.getElementById('chart-wrap');
+      const chartEmpty = document.getElementById('chart-empty');
+
+      if (Object.keys(catTotals).length === 0) {
+        chartWrap.classList.add('hidden');
+        chartEmpty.classList.remove('hidden');
+        if (pieChart) { pieChart.destroy(); pieChart = null; }
+      } else {
+        chartEmpty.classList.add('hidden');
+        chartWrap.classList.remove('hidden');
+        const labels = Object.keys(catTotals);
+        const data   = labels.map(l => parseFloat(catTotals[l].toFixed(2)));
+        const colors = labels.map(l => catColors[l] || '#94a3b8');
+        if (pieChart) pieChart.destroy();
+        pieChart = new Chart(document.getElementById('pieChart'), {
+          type: 'doughnut',
+          data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+              legend: { position:'bottom', labels:{ font:{family:'DM Sans',size:11}, padding:10, boxWidth:12, boxHeight:12 } },
+              tooltip: { callbacks: { label: ctx => ` ${ctx.label}: £${ctx.parsed.toFixed(2)}` } }
+            }
+          }
+        });
+      }
+
+      /* — Summary table — */
+      const summaryEl    = document.getElementById('summary-table');
+      const summaryEmpty = document.getElementById('summary-empty');
+      const allCats      = [...new Set(monthly.map(t => t.category))];
+
+      if (allCats.length === 0) {
+        summaryEl.innerHTML = '';
+        summaryEmpty.classList.remove('hidden');
+      } else {
+        summaryEmpty.classList.add('hidden');
+        summaryEl.innerHTML = allCats.map(cat => {
+          const inc = monthly.filter(t=>t.category===cat&&t.type==='income') .reduce((s,t)=>s+t.amount,0);
+          const exp = monthly.filter(t=>t.category===cat&&t.type==='expense').reduce((s,t)=>s+t.amount,0);
+          return `<tr class="text-sm">
+            <td class="py-2 text-gray-600">${catEmoji[cat]||''} ${cat}</td>
+            <td class="py-2 text-right text-leaf-700">${inc>0?fmt(inc):'—'}</td>
+            <td class="py-2 text-right text-red-500">${exp>0?fmt(exp):'—'}</td>
+          </tr>`;
+        }).join('');
+      }
+    } // end render()
+
+
+    /* ──────────────────────────────────────────────────
+       📤 SHARE
+    ────────────────────────────────────────────────── */
+    function shareApp() {
+      const msg = "I found this free no-signup budget tracker that actually helped me – brokenomore.net 💸 Worth checking if you want to get on top of your money.";
+      navigator.clipboard.writeText(msg)
+        .then(() => {
+          const toast = document.getElementById('share-toast');
+          toast.classList.remove('hidden');
+          setTimeout(()=>toast.classList.add('hidden'), 4000);
+        })
+        .catch(()=>prompt("Copy this message and share it anywhere 👇", msg));
+    }
+
+
+    /* ──────────────────────────────────────────────────
+       💡 TIPS DATA
+       ✅ IMPROVEMENT: Longer, warmer, more encouraging.
+          Each tip now has a 'detail' field with a fuller
+          explanation — like a friend sitting with you.
+    ────────────────────────────────────────────────── */
+    const tips = [
+      {
+        emoji: '☕',
+        title: 'Small spends add up — and that\'s okay to admit',
+        body: 'There\'s a reason the "stop buying coffee" advice went viral — it\'s because it\'s kind of true, even though it\'s also kind of annoying to hear. The point isn\'t to punish yourself for enjoying things. It\'s to notice the pattern. £4 here, £6 there, a tenner you don\'t remember spending — by the end of the month, it\'s real money. The magic of this app is that once you see the number, you get to decide if it was worth it. Sometimes it is. Sometimes you\'ll be genuinely shocked.'
+      },
+      {
+        emoji: '📆',
+        title: 'Pay yourself first, even if it\'s just £10',
+        body: 'This is the single most powerful habit in personal finance, and it\'s so simple it feels like a trick. The moment your pay arrives, move something — anything — to savings before you spend a penny. Even £10 a month. The amount matters far less than the habit. In a year you\'ll have £120 you didn\'t have before. In two years, £240 plus whatever interest you earned. It snowballs. And crucially, you learn to live on what\'s left — which means the habit automatically adjusts as you earn more.'
+      },
+      {
+        emoji: '🛒',
+        title: 'The grocery shop is where budgets go to die',
+        body: 'Honestly, this is where most people haemorrhage money without realising. Three things that genuinely work: 1) Never shop hungry — you will spend 20–40% more, it\'s been proven. 2) Write a list and actually stick to it. 3) Try five own-brand swaps this week. Supermarket own-brand products are often made in the same factories as the branded ones — you\'re paying for the packaging and the marketing, not the food. Start with pasta, rice, tinned tomatoes, milk, and bread. You won\'t notice. Your bank account will.'
+      },
+      {
+        emoji: '🔁',
+        title: 'You\'re probably paying for things you forgot exist',
+        body: 'Right now, go to your bank app, filter by recurring payments, and count them all. Most people find at least one subscription they completely forgot about — a free trial that silently converted, a streaming service nobody watches, a gym membership from a gym nobody goes to. Cancel them. That\'s real money back in your pocket every single month, for doing literally nothing. Even cancelling one £9.99 subscription saves you almost £120 a year. It takes five minutes.'
+      },
+      {
+        emoji: '🧾',
+        title: 'The 50/30/20 rule is your new compass',
+        body: 'If you\'ve never heard of this, it\'ll change how you see your money. It goes like this: 50% of your take-home pay goes to needs — rent, bills, food, transport. 30% goes to wants — eating out, hobbies, fun, subscriptions you actually use. 20% goes to savings, debt repayment, or your future. It\'s not a prison. If your rent takes 60%, that\'s fine — adjust the other numbers. The point is to have a framework instead of just hoping there\'s money left at the end of the month. Use this app to see where you actually are.'
+      },
+      {
+        emoji: '😤',
+        title: 'You\'re probably an emotional spender — and that\'s human',
+        body: 'Stress, boredom, loneliness, celebration — they all make us reach for our wallets. There\'s nothing wrong with you. It\'s literally how our brains work. The "fix" isn\'t to stop having emotions — it\'s to build a tiny gap between the feeling and the spending. When you feel the urge to buy something you didn\'t plan, try the 24-hour rule: wait a day. If you still want it tomorrow and you can afford it guilt-free, buy it. Most of the time, the urge passes. And when it doesn\'t, you\'ve made a conscious choice rather than an impulsive one. That difference matters.'
+      },
+      {
+        emoji: '🏦',
+        title: 'An emergency fund changes everything',
+        body: 'Here\'s what nobody tells you when you\'re broke: the reason unexpected expenses feel catastrophic isn\'t just the money — it\'s the absence of a buffer. When your car breaks down and you have £0 saved, that £400 repair isn\'t just expensive, it\'s destabilising. It wrecks your rent money, your food money, your mental health. Even a £300 emergency fund changes this completely. It turns a crisis into an inconvenience. Start with a goal of £300. Then £500. Then one month\'s expenses. You\'ll feel different the moment you have it — calmer, safer, more in control.'
+      },
+      {
+        emoji: '📈',
+        title: 'You\'re not bad with money. You just haven\'t had a system',
+        body: 'This is the most important thing I want you to hear: struggling with money isn\'t a personality flaw. It\'s not about being irresponsible or stupid or hopeless. It\'s almost always about not having the right information, the right tools, or the right habits — yet. The fact that you\'re here, tracking your spending, proves you care and you\'re trying. That\'s genuinely more than most people do. You\'re going to have weeks where you blow the budget. Everyone does. The goal isn\'t perfection — it\'s awareness. And you\'re building it, one entry at a time.'
+      }
+    ];
+
+    // Render tips
+    const tipsContainer = document.getElementById('tips-container');
+    tips.forEach(tip => {
+      const div = document.createElement('div');
+      div.className = 'tip-card bg-leaf-50 rounded-xl p-4';
+      div.innerHTML = `
+        <p class="text-2xl mb-2">${tip.emoji}</p>
+        <p class="font-medium text-leaf-800 text-sm mb-2 leading-snug">${tip.title}</p>
+        <p class="text-xs text-gray-500 leading-relaxed">${tip.body}</p>
+      `;
+      tipsContainer.appendChild(div);
+    });
+
+
+    /* ──────────────────────────────────────────────────
+       🚀 INIT
+    ────────────────────────────────────────────────── */
+    document.getElementById('tx-date').value = new Date().toISOString().split('T')[0];
+    render();
+
+  </script>
+
+</body>
+</html>
