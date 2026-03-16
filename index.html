@@ -516,13 +516,13 @@
        ✅ IMPROVEMENT: Longer, warmer, more encouraging tips
           written like a friend who genuinely cares.
   ════════════════════════════════════════════════════ -->
-  <section class="max-w-3xl mx-auto px-4 mb-6">
-    <div class="card rounded-2xl shadow-md p-5">
-      <h2 class="font-display text-xl text-leaf-800 mb-1">💡 Real Talk: Money Tips from a Friend</h2>
-      <p class="text-xs text-gray-400 mb-4">No judgment. No finance-bro jargon. Just honest stuff that helped me.</p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="tips-container"></div>
-    </div>
-  </section>
+<!-- MONEY TIPS SECTION -->
+<section class="max-w-3xl mx-auto px-4 mb-12">
+  <h2 class="text-2xl font-bold text-center mb-6 text-gray-800 dark:text-gray-100">💡 Real Talk: Money Tips from a Friend</h2>
+  <p class="text-center text-gray-600 dark:text-gray-300 mb-8">No judgment. No finance-bro jargon. Just honest stuff that actually helped me when I was in the same spot.</p>
+
+  <div id="tips-container" class="space-y-6"></div>  <!-- This empty div is where tips will be inserted by JS -->
+</section>
 
 
   <!-- ════════════════════════════════════════════════════
@@ -916,61 +916,82 @@
           explanation — like a friend sitting with you.
     ────────────────────────────────────────────────── */
     const tips = [
-      {
-        emoji: '☕',
-        title: 'Small spends add up — and that\'s okay to admit',
-        body: 'There\'s a reason the "stop buying coffee" advice went viral — it\'s because it\'s kind of true, even though it\'s also kind of annoying to hear. The point isn\'t to punish yourself for enjoying things. It\'s to notice the pattern. £4 here, £6 there, a tenner you don\'t remember spending — by the end of the month, it\'s real money. The magic of this app is that once you see the number, you get to decide if it was worth it. Sometimes it is. Sometimes you\'ll be genuinely shocked.'
-      },
-      {
-        emoji: '📆',
-        title: 'Pay yourself first, even if it\'s just £10',
-        body: 'This is the single most powerful habit in personal finance, and it\'s so simple it feels like a trick. The moment your pay arrives, move something — anything — to savings before you spend a penny. Even £10 a month. The amount matters far less than the habit. In a year you\'ll have £120 you didn\'t have before. In two years, £240 plus whatever interest you earned. It snowballs. And crucially, you learn to live on what\'s left — which means the habit automatically adjusts as you earn more.'
-      },
-      {
-        emoji: '🛒',
-        title: 'The grocery shop is where budgets go to die',
-        body: 'Honestly, this is where most people haemorrhage money without realising. Three things that genuinely work: 1) Never shop hungry — you will spend 20–40% more, it\'s been proven. 2) Write a list and actually stick to it. 3) Try five own-brand swaps this week. Supermarket own-brand products are often made in the same factories as the branded ones — you\'re paying for the packaging and the marketing, not the food. Start with pasta, rice, tinned tomatoes, milk, and bread. You won\'t notice. Your bank account will.'
-      },
-      {
-        emoji: '🔁',
-        title: 'You\'re probably paying for things you forgot exist',
-        body: 'Right now, go to your bank app, filter by recurring payments, and count them all. Most people find at least one subscription they completely forgot about — a free trial that silently converted, a streaming service nobody watches, a gym membership from a gym nobody goes to. Cancel them. That\'s real money back in your pocket every single month, for doing literally nothing. Even cancelling one £9.99 subscription saves you almost £120 a year. It takes five minutes.'
-      },
-      {
-        emoji: '🧾',
-        title: 'The 50/30/20 rule is your new compass',
-        body: 'If you\'ve never heard of this, it\'ll change how you see your money. It goes like this: 50% of your take-home pay goes to needs — rent, bills, food, transport. 30% goes to wants — eating out, hobbies, fun, subscriptions you actually use. 20% goes to savings, debt repayment, or your future. It\'s not a prison. If your rent takes 60%, that\'s fine — adjust the other numbers. The point is to have a framework instead of just hoping there\'s money left at the end of the month. Use this app to see where you actually are.'
-      },
-      {
-        emoji: '😤',
-        title: 'You\'re probably an emotional spender — and that\'s human',
-        body: 'Stress, boredom, loneliness, celebration — they all make us reach for our wallets. There\'s nothing wrong with you. It\'s literally how our brains work. The "fix" isn\'t to stop having emotions — it\'s to build a tiny gap between the feeling and the spending. When you feel the urge to buy something you didn\'t plan, try the 24-hour rule: wait a day. If you still want it tomorrow and you can afford it guilt-free, buy it. Most of the time, the urge passes. And when it doesn\'t, you\'ve made a conscious choice rather than an impulsive one. That difference matters.'
-      },
-      {
-        emoji: '🏦',
-        title: 'An emergency fund changes everything',
-        body: 'Here\'s what nobody tells you when you\'re broke: the reason unexpected expenses feel catastrophic isn\'t just the money — it\'s the absence of a buffer. When your car breaks down and you have £0 saved, that £400 repair isn\'t just expensive, it\'s destabilising. It wrecks your rent money, your food money, your mental health. Even a £300 emergency fund changes this completely. It turns a crisis into an inconvenience. Start with a goal of £300. Then £500. Then one month\'s expenses. You\'ll feel different the moment you have it — calmer, safer, more in control.'
-      },
-      {
-        emoji: '📈',
-        title: 'You\'re not bad with money. You just haven\'t had a system',
-        body: 'This is the most important thing I want you to hear: struggling with money isn\'t a personality flaw. It\'s not about being irresponsible or stupid or hopeless. It\'s almost always about not having the right information, the right tools, or the right habits — yet. The fact that you\'re here, tracking your spending, proves you care and you\'re trying. That\'s genuinely more than most people do. You\'re going to have weeks where you blow the budget. Everyone does. The goal isn\'t perfection — it\'s awareness. And you\'re building it, one entry at a time.'
-      }
-    ];
+  {
+    emoji: '☕',
+    title: "Track literally everything for one week",
+    detail: "Even that £1.50 coffee or 50p bus fare. No rules, no guilt — just write it down. Most people get shocked at where the money quietly disappears and naturally start spending less without forcing anything. It's the easiest first win."
+  },
+  {
+    emoji: '🧊',
+    title: "Freeze your spending urges",
+    detail: "When you want something non-essential, put your card in a literal glass of water in the freezer for 48 hours. By the time it's thawed, 80% of the time the urge is gone. Saved me from so many dumb buys."
+  },
+  {
+    emoji: '🍲',
+    title: "One home-cooked meal extra per week",
+    detail: "Pick something simple you already like (pasta, eggs on toast, whatever). Skip one takeaway. That's easily £15–30 saved with almost zero effort. Small habits like this add up fast when you're starting from zero."
+  },
+  {
+    emoji: '📴',
+    title: "Hunt down zombie subscriptions",
+    detail: "Go through your bank app right now and cancel one thing you're not using (Netflix extra profile, old gym app, app trials). Most people find £10–40/month hiding. Feels amazing to kill those silent drains."
+  },
+  {
+    emoji: '🛒',
+    title: "Never shop hungry or without a list",
+    detail: "Eat before groceries and write down exactly what you need. Hunger makes you impulse-buy junk — studies say up to 30% more spent. This one rule alone can cut your food bill noticeably."
+  },
+  {
+    emoji: '📞',
+    title: "Call and ask for a better deal",
+    detail: "Phone bill, broadband, insurance — once a year say: 'I'm thinking of switching unless you can do better.' Works more often than you'd think. I've saved £100–300/year just by asking."
+  },
+  {
+    emoji: '🚶',
+    title: "Walk short trips instead",
+    detail: "Anything under 2 miles — leave the car/bus. Saves fuel/parking + free mood boost/exercise. When money's tight, these tiny savings feel like wins and they compound."
+  },
+  {
+    emoji: '💰',
+    title: "Pay yourself first — even £5",
+    detail: "As soon as any money comes in (pay, gift, refund), move 5–10% to a separate savings pot before touching the rest. Makes saving automatic instead of 'whatever's left' (which is usually nothing)."
+  },
+  {
+    emoji: '🔍',
+    title: "5-minute weekly money check-in",
+    detail: "Every Sunday look at last week's spending for 5 minutes. Spot patterns early (£3 daily snacks = £90/month). Catching leaks small prevents big problems later."
+  },
+  {
+    emoji: '🤝',
+    title: "Tell one person your goal",
+    detail: "Say to a friend or family: 'I'm trying to get on top of money this month.' Accountability makes it way easier to stick — and most people are supportive when you're real about it."
+  }
+];
 
-    // Render tips
-    const tipsContainer = document.getElementById('tips-container');
-    tips.forEach(tip => {
-      const div = document.createElement('div');
-      div.className = 'tip-card bg-leaf-50 rounded-xl p-4';
-      div.innerHTML = `
-        <p class="text-2xl mb-2">${tip.emoji}</p>
-        <p class="font-medium text-leaf-800 text-sm mb-2 leading-snug">${tip.title}</p>
-        <p class="text-xs text-gray-500 leading-relaxed">${tip.body}</p>
-      `;
-      tipsContainer.appendChild(div);
-    });
+function renderTips() {
+  const container = document.getElementById('tips-container');
+  if (!container) return;
 
+  container.innerHTML = ''; // clear previous content
+
+  tips.forEach(tip => {
+    const tipEl = document.createElement('div');
+    tipEl.className = 'bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700';
+    tipEl.innerHTML = `
+      <div class="flex items-start gap-4">
+        <span class="text-3xl">${tip.emoji}</span>
+        <div>
+          <h3 class="font-semibold text-lg text-gray-800 dark:text-gray-100">${tip.title}</h3>
+          <p class="mt-2 text-gray-600 dark:text-gray-300">${tip.detail}</p>
+        </div>
+      </div>
+    `;
+    container.appendChild(tipEl);
+  });
+}
+
+// Run when the page fully loads
+window.addEventListener('DOMContentLoaded', renderTips);
 
     /* ──────────────────────────────────────────────────
        🚀 INIT
